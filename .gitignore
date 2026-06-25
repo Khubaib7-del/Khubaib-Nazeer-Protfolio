@@ -1,0 +1,10 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Demo videos — not yet compressed (two exceed GitHub's 100MB file limit).
+# Compress with ffmpeg (see project notes), then remove this line and commit them.
+assets/videos/*.mp4
