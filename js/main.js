@@ -119,38 +119,39 @@ navMobile.querySelectorAll('a').forEach((a) =>
   })
 );
 
-/* ---------- Project video lightbox (self-hosted <video>, or LinkedIn embed with a
-   visible "View on LinkedIn" fallback link in case an ad-blocker kills the iframe) ---------- */
+/* ---------- Project video lightbox — builds exactly one media element fresh
+   per click (instead of toggling visibility on two pre-existing elements,
+   which was rendering both at once) so there's never a stray empty box. ---------- */
 const videoModal = document.getElementById('video-modal');
-const videoPlayer = document.getElementById('video-modal-player');
-const videoEmbed = document.getElementById('video-modal-embed');
+const videoBody = document.getElementById('video-modal-body');
 const videoFallback = document.getElementById('video-modal-fallback');
 const videoTitle = document.getElementById('video-modal-title');
 const videoClose = document.getElementById('video-modal-close');
 
 function closeVideoModal() {
   videoModal.classList.remove('open');
-  videoPlayer.pause();
-  videoPlayer.removeAttribute('src');
-  videoPlayer.load();
-  videoEmbed.removeAttribute('src');
+  videoBody.innerHTML = '';
   document.body.style.overflow = '';
 }
 document.querySelectorAll('.project-watch').forEach((btn) => {
   btn.addEventListener('click', () => {
     videoTitle.textContent = btn.dataset.title || '';
+    videoBody.innerHTML = '';
     if (btn.dataset.embed === 'linkedin') {
-      videoPlayer.style.display = 'none';
-      videoEmbed.style.display = 'block';
-      videoEmbed.src = btn.dataset.src;
+      const iframe = document.createElement('iframe');
+      iframe.src = btn.dataset.src;
+      iframe.allowFullscreen = true;
+      iframe.title = 'Embedded post';
+      videoBody.appendChild(iframe);
       videoFallback.href = btn.dataset.fallback;
       videoFallback.style.display = 'inline-block';
     } else {
-      videoEmbed.style.display = 'none';
+      const video = document.createElement('video');
+      video.controls = true;
+      video.src = btn.dataset.src;
+      videoBody.appendChild(video);
+      video.play().catch(() => {});
       videoFallback.style.display = 'none';
-      videoPlayer.style.display = 'block';
-      videoPlayer.src = btn.dataset.src;
-      videoPlayer.play().catch(() => {});
     }
     videoModal.classList.add('open');
     document.body.style.overflow = 'hidden';
