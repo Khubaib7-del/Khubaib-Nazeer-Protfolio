@@ -5,11 +5,13 @@ Thumbs.db
 # Editor
 .vscode/
 
-# Demo videos — most projects use a LinkedIn embed instead (see main.js).
-# bite-balance.mp4 and algo-visualizer.mp4 are NOT allow-listed: they exceed
-# GitHub's 100MB file limit and aren't needed anyway (LinkedIn embed covers
-# them). pop-rush.mp4 and cognivision.mp4 have no LinkedIn upload, so they're
-# pushed directly — both are under the limit (13MB / 92MB).
+# Demo videos — moving away from LinkedIn embeds (unreliable: ad-blockers,
+# post-visibility requirements) toward self-hosting everything.
+# bite-balance.mp4 and algo-visualizer.mp4 still need ffmpeg compression
+# first — they exceed GitHub's 100MB file limit as-is. The other 4 are
+# already under the limit and allow-listed below.
 assets/videos/*.mp4
 !assets/videos/pop-rush.mp4
 !assets/videos/cognivision.mp4
+!assets/videos/echo-drift.mp4
+!assets/videos/os-scheduler-visualizer.mp4
