@@ -6,9 +6,10 @@ Thumbs.db
 .vscode/
 
 # Demo videos — most projects use a LinkedIn embed instead (see main.js).
-# These self-hosted originals aren't compressed yet (two exceed GitHub's
-# 100MB file limit). Compress with ffmpeg, then remove this block and commit.
-# pop-rush.mp4 is the exception: no LinkedIn video exists for it, it's
-# already small (13MB), so it's pushed directly — allow-listed below.
+# bite-balance.mp4 and algo-visualizer.mp4 are NOT allow-listed: they exceed
+# GitHub's 100MB file limit and aren't needed anyway (LinkedIn embed covers
+# them). pop-rush.mp4 and cognivision.mp4 have no LinkedIn upload, so they're
+# pushed directly — both are under the limit (13MB / 92MB).
 assets/videos/*.mp4
 !assets/videos/pop-rush.mp4
+!assets/videos/cognivision.mp4

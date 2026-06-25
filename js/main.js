@@ -119,9 +119,10 @@ navMobile.querySelectorAll('a').forEach((a) =>
   })
 );
 
-/* ---------- Project video lightbox ---------- */
+/* ---------- Project video lightbox (self-hosted <video> or LinkedIn embed) ---------- */
 const videoModal = document.getElementById('video-modal');
 const videoPlayer = document.getElementById('video-modal-player');
+const videoEmbed = document.getElementById('video-modal-embed');
 const videoTitle = document.getElementById('video-modal-title');
 const videoClose = document.getElementById('video-modal-close');
 
@@ -130,15 +131,24 @@ function closeVideoModal() {
   videoPlayer.pause();
   videoPlayer.removeAttribute('src');
   videoPlayer.load();
+  videoEmbed.removeAttribute('src');
   document.body.style.overflow = '';
 }
 document.querySelectorAll('.project-watch').forEach((btn) => {
   btn.addEventListener('click', () => {
-    videoPlayer.src = btn.dataset.video;
     videoTitle.textContent = btn.dataset.title || '';
+    if (btn.dataset.embed === 'linkedin') {
+      videoPlayer.style.display = 'none';
+      videoEmbed.style.display = 'block';
+      videoEmbed.src = btn.dataset.src;
+    } else {
+      videoEmbed.style.display = 'none';
+      videoPlayer.style.display = 'block';
+      videoPlayer.src = btn.dataset.src;
+      videoPlayer.play().catch(() => {});
+    }
     videoModal.classList.add('open');
     document.body.style.overflow = 'hidden';
-    videoPlayer.play().catch(() => {});
   });
 });
 videoClose.addEventListener('click', closeVideoModal);
