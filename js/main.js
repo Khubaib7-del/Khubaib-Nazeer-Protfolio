@@ -14,6 +14,29 @@ window.addEventListener('pageshow', () => window.scrollTo(0, 0));
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Real bug found via testing (confirmed with direct ScrollTrigger.start
+// inspection): every trigger positioned after #collection was being created
+// BEFORE setupHorizontalScroll() ever ran, so they measured the document
+// *without* the pinned section's scroll-spacer in the DOM yet — off by
+// exactly getMax() (track.scrollWidth - innerWidth) for every trigger below
+// it. ScrollTrigger.refresh() does NOT fix an already-created trigger's
+// stale start position (verified — calling it repeatedly never corrected
+// it; only killing and recreating the trigger did), so the real fix is
+// ordering: create the pin first, before anything below it gets measured.
+setupHorizontalScroll('#collection', '#collection-track', '#collection-progress');
+
+// Belt-and-suspenders for any *other* future layout shift (lazy images,
+// font swap, more content added later) — refresh on any body resize.
+// This does NOT fix the pin-ordering issue above (see comment), it's a
+// separate, narrower safety net for legitimately async changes.
+let refreshTimer;
+new ResizeObserver(() => {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 150);
+}).observe(document.body);
+
+document.fonts.ready.then(() => ScrollTrigger.refresh());
+
 /* ---------- Custom cursor: ember dot + lagging ring, expands over interactive elements ---------- */
 if (!reducedMotion && window.matchMedia('(pointer: fine)').matches) {
   const dot = document.getElementById('cursor-dot');
@@ -289,7 +312,7 @@ applySmokeText('.split-text'); // Philosophy: full smoke in-then-out, the sectio
 applySmokeText('.legacy-text h2', { dissolveOut: false }); // finale stays calm
 applyStampIn('.certificates-head h2'); // rubber-stamp impact — fits the "certificate" metaphor
 applyGradientWipe('.education h2'); // ember color sweep
-applyScatterBounce('.skills h2', { spread: 90, ease: 'bounce.out', minDuration: 0.6, maxDuration: 1.2, maxDelay: 0.5 }); // tight, snappy bounce — ties to the puzzle below it
+applyScatterBounce('.skills h2', { spread: 90, ease: 'bounce.out', minDuration: 0.4, maxDuration: 0.7, cascade: 0.35, jitter: 0.1 }); // tight, snappy bounce — ties to the puzzle below it
 gsap.utils.toArray('.h-section-head h2').forEach((el) => {
   gsap.fromTo(
     el,
@@ -297,7 +320,7 @@ gsap.utils.toArray('.h-section-head h2').forEach((el) => {
     { clipPath: 'inset(0 0% 0 0)', ease: 'none', scrollTrigger: { trigger: el, start: 'top 85%', end: 'top 50%', scrub: true } }
   );
 }); // Projects: curtain-wipe mask
-applyScatterBounce('.stories h2', { spread: 180, ease: 'elastic.out(1, 0.5)', minDuration: 1.0, maxDuration: 1.9, maxDelay: 0.8 }); // wide, loose elastic wobble
+applyScatterBounce('.stories h2', { spread: 170, ease: 'elastic.out(1, 0.5)', minDuration: 0.55, maxDuration: 0.95, cascade: 0.55, jitter: 0.15 }); // wide, loose elastic wobble
 
 gsap.to('.philosophy-bg', {
   backgroundPosition: '100% 50%',
@@ -506,7 +529,8 @@ function setupHorizontalScroll(sectionSel, trackSel, progressSel) {
       }),
   });
 }
-setupHorizontalScroll('#collection', '#collection-track', '#collection-progress');
+// Called near the top of this file, before any trigger positioned after
+// #collection gets created — see the comment there for why.
 
 /* ---------- Stat counters, paired with a gauge bar that fills in lockstep ---------- */
 gsap.utils.toArray('.stat-num').forEach((el) => {

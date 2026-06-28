@@ -32,9 +32,10 @@ export function applyScatterBounce(selector, opts = {}) {
   if (reducedMotion) return;
   const {
     spread = 110,
-    minDuration = 0.5,
-    maxDuration = 1.0,
-    maxDelay = 0.45,
+    minDuration = 0.45,
+    maxDuration = 0.75,
+    cascade = 0.45, // total time span over which letters START — bounded, NOT multiplied by letter count
+    jitter = 0.12,
     ease = 'bounce.out',
   } = opts;
 
@@ -58,18 +59,21 @@ export function applyScatterBounce(selector, opts = {}) {
       chars.push(span);
     });
 
-    // Base delay climbs with letter index (so the reveal has a visible left-to-right
-    // current you can follow, and scales with text length instead of always finishing
-    // in under a second) with random jitter layered on top for the "different pace" feel.
+    // Base delay climbs with letter index, normalized by total letter count so
+    // the reveal has a visible left-to-right current WITHOUT the total runtime
+    // growing with text length — a 5-letter and a 40-letter heading both finish
+    // within roughly the same window. Small random jitter on top for the
+    // "different pace" feel without long-tail outliers.
     const seeds = chars.map((_, i) => {
       const angle = Math.random() * Math.PI * 2;
       const dist = spread * (0.5 + Math.random() * 0.5);
+      const progress = chars.length > 1 ? i / (chars.length - 1) : 0;
       return {
         x: Math.cos(angle) * dist,
         y: Math.sin(angle) * dist,
         rot: (Math.random() - 0.5) * 60,
         duration: minDuration + Math.random() * (maxDuration - minDuration),
-        delay: i * 0.045 + Math.random() * maxDelay,
+        delay: progress * cascade + Math.random() * jitter,
       };
     });
 
