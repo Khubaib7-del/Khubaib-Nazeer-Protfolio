@@ -1,11 +1,16 @@
 import { initRoomScene } from './room-scene.js';
 import { initPixelArt } from './pixel-art.js';
 import { applySmokeText } from './smoke-text.js';
-import { applyGradientWipe, applyCharFlip, applyScrambleText } from './text-effects.js';
+import { applyGradientWipe, applyScatterBounce } from './text-effects.js';
 import { initCourseRing } from './course-ring.js';
 import { initSkillsPuzzle } from './skills-puzzle.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Belt-and-suspenders for the "always reload from the top" requirement — the
+// inline <head> script handles a normal reload, this covers a bfcache restore
+// (browser back/forward), which fires pageshow instead of a fresh page load.
+window.addEventListener('pageshow', () => window.scrollTo(0, 0));
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -66,23 +71,57 @@ ScrollTrigger.config({ ignoreMobileResize: true });
 /* ---------- Loader ---------- */
 function runLoader() {
   const loader = document.getElementById('loader');
+  const mark = document.querySelector('.loader-mark');
   const fill = document.getElementById('loader-progress');
   const pct = document.getElementById('loader-pct');
+
+  // Logo-style entrance for the name itself, instead of it just sitting there
+  // static while only the bar underneath it moves.
+  const chars = [...mark.textContent].map((ch) => {
+    const span = document.createElement('span');
+    span.className = 'loader-char';
+    span.textContent = ch;
+    return span;
+  });
+  mark.innerHTML = '';
+  chars.forEach((c) => mark.appendChild(c));
+  gsap.fromTo(
+    chars,
+    { opacity: 0, y: 16, scale: 0.6 },
+    { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.035, ease: 'back.out(1.8)' }
+  );
+
   let p = 0;
   const tick = setInterval(() => {
-    p += Math.random() * 18;
-    if (p >= 100) {
-      p = 100;
+    p += Math.random() * 16;
+    if (p >= 92) {
       clearInterval(tick);
-      gsap.to(loader, {
-        opacity: 0,
-        duration: 0.6,
-        delay: 0.2,
+      // Finish the last stretch as one deliberate tween to exactly 100 instead
+      // of however far the last random increment happened to land — reads as
+      // an intentional finish rather than a jumpy final step.
+      const proxy = { v: p };
+      gsap.to(proxy, {
+        v: 100,
+        duration: 0.5,
+        ease: 'power2.out',
+        onUpdate() {
+          fill.style.width = proxy.v + '%';
+          pct.textContent = Math.floor(proxy.v) + '%';
+        },
         onComplete: () => {
-          loader.style.display = 'none';
-          playHeroIntro();
+          gsap.to(loader, {
+            opacity: 0,
+            scale: 1.04,
+            duration: 0.7,
+            ease: 'power2.inOut',
+            onComplete: () => {
+              loader.style.display = 'none';
+              playHeroIntro();
+            },
+          });
         },
       });
+      return;
     }
     fill.style.width = p + '%';
     pct.textContent = Math.floor(p) + '%';
@@ -224,7 +263,7 @@ gsap.utils.toArray('.reveal-up').forEach((el) => {
 applySmokeText('.split-text'); // Philosophy: full smoke in-then-out, the section's signature effect
 applySmokeText('.certificates-head h2, .legacy-text h2', { dissolveOut: false }); // bookend sections stay calm
 applyGradientWipe('.education h2'); // ember color sweep
-applyCharFlip('.skills h2'); // sharp mechanical flip, ties to the puzzle below it
+applyScatterBounce('.skills h2', { spread: 80, ease: 'bounce.out', minDuration: 0.4, maxDuration: 0.8, maxDelay: 0.35 }); // tight, snappy bounce — ties to the puzzle below it
 gsap.utils.toArray('.h-section-head h2').forEach((el) => {
   gsap.fromTo(
     el,
@@ -232,7 +271,7 @@ gsap.utils.toArray('.h-section-head h2').forEach((el) => {
     { clipPath: 'inset(0 0% 0 0)', ease: 'none', scrollTrigger: { trigger: el, start: 'top 85%', end: 'top 50%', scrub: true } }
   );
 }); // Projects: curtain-wipe mask
-applyScrambleText('.stories h2'); // terminal-style decode-in
+applyScatterBounce('.stories h2', { spread: 170, ease: 'elastic.out(1, 0.5)', minDuration: 0.7, maxDuration: 1.4, maxDelay: 0.6 }); // wide, loose elastic wobble
 
 gsap.to('.philosophy-bg', {
   backgroundPosition: '100% 50%',

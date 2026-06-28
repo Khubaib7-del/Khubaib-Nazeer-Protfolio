@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Always start a reload at the top instead of the browser restoring the
+  // previous scroll position — this site's intro (loader + hero animation)
+  // is meant to play from the top every time.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0, 0);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Khubaib Nazeer — CS Undergrad @ FAST NUCES</title>
 <meta name="description" content="Khubaib Nazeer — Computer Science undergraduate at FAST NUCES Lahore. Projects, skills, and curiosity-driven learning.">
