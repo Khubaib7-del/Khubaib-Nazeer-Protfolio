@@ -24,6 +24,9 @@ gsap.registerPlugin(ScrollTrigger);
 // it; only killing and recreating the trigger did), so the real fix is
 // ordering: create the pin first, before anything below it gets measured.
 setupHorizontalScroll('#collection', '#collection-track', '#collection-progress');
+// Same ordering logic: cert deck pin creates a spacer that shifts everything
+// below it — must be called before stories/legacy triggers measure positions.
+setupCertStack();
 
 // Belt-and-suspenders for any *other* future layout shift (lazy images,
 // font swap, more content added later) — refresh on any body resize.
@@ -401,25 +404,8 @@ gsap.utils.toArray('.interest-card').forEach((card, i) => {
   );
 });
 
-/* ---------- Certificate cards: stamp-impact entrance, cursor tilt + shine, lightbox ---------- */
-gsap.utils.toArray('.cert-card').forEach((card, i) => {
-  const inner = card.querySelector('.cert-card-inner');
-  const ring = document.createElement('div');
-  ring.className = 'cert-stamp-ring';
-  inner.appendChild(ring);
-
-  ScrollTrigger.create({
-    trigger: card,
-    start: 'top 80%',
-    once: true,
-    onEnter: () => {
-      gsap
-        .timeline({ delay: i * 0.12 })
-        .fromTo(card, { opacity: 0, scale: 1.6, rotate: -8, y: 30 }, { opacity: 1, scale: 1, rotate: 0, y: 0, duration: 0.6, ease: 'back.out(2.2)' })
-        .fromTo(ring, { scale: 0.4, opacity: 0.8 }, { scale: 1.6, opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.25');
-    },
-  });
-});
+/* ---------- Certificate cards: cursor tilt + shine, lightbox ---------- */
+/* Entrance + deck animation handled by setupCertStack() above */
 
 if (!reducedMotion) {
   document.querySelectorAll('.cert-card-inner').forEach((inner) => {
@@ -465,6 +451,97 @@ certModal.addEventListener('click', (e) => {
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && certModal.classList.contains('open')) closeCertModal();
 });
+
+/* ---------- Certificate deck: pinned stacked-card scroll ---------- */
+function setupCertStack() {
+  const wrapper = document.getElementById('cert-stack');
+  const nav = document.getElementById('cert-stack-nav');
+  const countEl = document.getElementById('cert-stack-count');
+  if (!wrapper) return;
+
+  const cards = [...wrapper.querySelectorAll('.cert-card')];
+  if (cards.length < 2) {
+    // Single card — simple slide-up entrance, no pin needed.
+    if (cards[0]) {
+      gsap.from(cards[0], { opacity: 0, y: 40, duration: 0.7, ease: 'power3.out',
+        scrollTrigger: { trigger: cards[0], start: 'top 82%', once: true } });
+    }
+    return;
+  }
+
+  // Switch wrapper to absolute-positioning mode.
+  wrapper.classList.add('cert-stack--active');
+  const cardW = cards[0].offsetWidth;
+  const cardH = cards[0].offsetHeight;
+  const peek = 18;      // px each successive card peeks below the one in front
+  const scaleStep = 0.048; // how much smaller each card in the stack appears
+  const dimStep = 0.18;    // opacity drop per depth level
+
+  // Give the wrapper an explicit height so the pinned section has a defined
+  // size — actual card height + enough peek for the full stack depth.
+  wrapper.style.height = (cardH + (cards.length - 1) * peek) + 'px';
+
+  // Position all cards absolutely in their stacked state.
+  cards.forEach((card, i) => {
+    gsap.set(card, {
+      xPercent: -50,
+      y: i * peek,
+      scale: 1 - i * scaleStep,
+      opacity: Math.max(0.45, 1 - i * dimStep),
+      zIndex: cards.length - i,
+      transformOrigin: 'center bottom',
+    });
+  });
+
+  const section = document.querySelector('#certificates');
+  const scrollPerCard = window.innerHeight;
+
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: section,
+      pin: true,
+      pinSpacing: true,
+      scrub: 1,
+      start: 'top top',
+      end: `+=${(cards.length - 1) * scrollPerCard}`,
+      onUpdate(self) {
+        if (!countEl) return;
+        // Which card is currently "active" (front of stack)?
+        const idx = Math.min(Math.floor(self.progress * cards.length), cards.length - 1);
+        countEl.textContent = `${idx + 1} / ${cards.length}`;
+      },
+    },
+  });
+
+  // For each card except the last: animate it out, then advance remaining cards.
+  cards.forEach((card, i) => {
+    if (i === cards.length - 1) return;
+    const pos = i; // timeline position (each transition occupies 1 unit)
+
+    // Front card exits: shoots up, rotates slightly, fades.
+    tl.to(card, {
+      y: -(cardH * 1.4),
+      opacity: 0,
+      scale: 0.88,
+      rotate: (Math.random() - 0.5) * 6, // small random tilt on exit
+      ease: 'power2.in',
+      duration: 1,
+    }, pos);
+
+    // Remaining cards advance one slot each.
+    cards.slice(i + 1).forEach((c, j) => {
+      tl.to(c, {
+        y: j * peek,
+        scale: 1 - j * scaleStep,
+        opacity: Math.max(0.45, 1 - j * dimStep),
+        ease: 'power2.out',
+        duration: 1,
+      }, pos);
+    });
+  });
+
+  // Mouse tilt + shine stays active on the front card only (already wired below).
+}
 
 /* ---------- Horizontal scroll sections ---------- */
 function setupHorizontalScroll(sectionSel, trackSel, progressSel) {

@@ -265,9 +265,19 @@ img, canvas { display: block; max-width: 100%; }
 .certificates { padding: 8rem clamp(1.25rem, 6vw, 6rem); }
 .certificates-head { margin-bottom: 3.5rem; max-width: 620px; }
 .certificates-head h2 { font-family: var(--font-display); font-size: clamp(1.9rem, 4.4vw, 3rem); font-weight: 600; margin-top: 0.8rem; }
-.cert-grid { display: flex; flex-wrap: wrap; gap: 2.5rem; }
 
-.cert-card { width: clamp(260px, 30vw, 320px); }
+/* Default layout — flex row, becomes a pinned stack when JS adds --active class */
+.cert-stack { display: flex; flex-wrap: wrap; gap: 2.5rem; position: relative; overflow: visible; }
+.cert-stack--active { display: block; }
+.cert-stack--active .cert-card { position: absolute; top: 0; left: 50%; }
+
+/* Scroll counter — hidden until stack is active with 2+ cards */
+.cert-stack-nav { display: none; align-items: center; gap: 1.2rem; margin-top: 2rem; }
+.cert-stack--active ~ .cert-stack-nav { display: flex; }
+.cert-stack-count { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ember-soft); }
+.cert-stack-hint { font-size: 0.8rem; color: var(--ink-dim); }
+
+.cert-card { width: clamp(280px, 36vw, 380px); }
 .cert-card-inner {
   position: relative; perspective: 900px; transform-style: preserve-3d;
   border-radius: 16px; will-change: transform;
@@ -276,10 +286,6 @@ img, canvas { display: block; max-width: 100%; }
   position: absolute; inset: -14px; z-index: -1; border-radius: 22px;
   background: radial-gradient(circle, rgba(255, 90, 31, 0.35), transparent 70%);
   opacity: 0; transition: opacity 0.4s; filter: blur(6px);
-}
-.cert-stamp-ring {
-  position: absolute; inset: 0; border: 2px solid var(--ember); border-radius: 16px;
-  pointer-events: none; opacity: 0;
 }
 .cert-card-inner:hover .cert-card-glow { opacity: 1; }
 .cert-card-badge {

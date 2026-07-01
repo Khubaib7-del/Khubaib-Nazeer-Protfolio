@@ -5,16 +5,12 @@ Thumbs.db
 # Editor
 .vscode/
 
-# Demo videos — moving away from LinkedIn embeds (unreliable: ad-blockers,
-# post-visibility requirements) toward self-hosting everything.
-# bite-balance.mp4 and algo-visualizer.mp4 still need ffmpeg compression
-# first — they exceed GitHub's 100MB file limit as-is. The other 4 are
-# already under the limit and allow-listed below.
+# Demo videos — all compressed to *-web.mp4 (0.9–5MB each) and self-hosted.
+# Raw originals stay excluded: bite-balance.mp4 (174MB) and
+# algo-visualizer.mp4 (109MB) exceed GitHub's 100MB limit.
+# All *-web.mp4 versions are allow-listed.
 assets/videos/*.mp4
-!assets/videos/pop-rush.mp4
-!assets/videos/cognivision.mp4
-!assets/videos/echo-drift.mp4
-!assets/videos/os-scheduler-visualizer.mp4
+!assets/videos/*-web.mp4
 
 # Local drop zone for new certificate images — copy the one you want live
 # into assets/certificates/ and add a .cert-card for it, this folder itself
